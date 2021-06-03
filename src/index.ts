@@ -1,5 +1,6 @@
 import { defaultConfig, formatConfigHelp } from './config/config'
 import { initApp } from './init'
+import { makePiscina as makeInstallPiscina } from './install_worker/piscina'
 import { GraphileQueue } from './main/job-queues/concurrent/graphile-queue'
 import { startPluginsServer } from './main/pluginsServer'
 import { Status } from './utils/status'
@@ -71,6 +72,6 @@ switch (alternativeMode) {
 
     default:
         initApp(defaultConfig)
-        void startPluginsServer(defaultConfig, makePiscina) // void the returned promise
+        void startPluginsServer(defaultConfig, makePiscina, makeInstallPiscina) // void the returned promise
         break
 }

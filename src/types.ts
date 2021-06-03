@@ -211,6 +211,7 @@ export interface PluginConfig {
     team_id: TeamId
     plugin?: Plugin
     plugin_id: PluginId
+    plugin_installation_id?: number
     enabled: boolean
     order: number
     config: Record<string, unknown>
@@ -219,6 +220,12 @@ export interface PluginConfig {
     vm?: LazyPluginVM | null
     created_at: string
     updated_at: string
+}
+
+export type InstallConfig = {
+    plugin_id: PluginId
+    plugin_config_id: PluginConfigId
+    plugin_installation_id?: number
 }
 
 export interface PluginJsonConfig {

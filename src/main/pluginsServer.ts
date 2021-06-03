@@ -22,6 +22,7 @@ const { version } = require('../../package.json')
 export type ServerInstance = {
     hub: Hub
     piscina: Piscina
+    installPiscinaPool: Piscina
     queue: Queue
     mmdb?: ReaderModel
     mmdbUpdateJob?: schedule.Job
@@ -30,7 +31,8 @@ export type ServerInstance = {
 
 export async function startPluginsServer(
     config: Partial<PluginsServerConfig>,
-    makePiscina: (config: PluginsServerConfig) => Piscina
+    makePiscina: (config: PluginsServerConfig) => Piscina,
+    makeInstallPiscina: (config: PluginsServerConfig) => Piscina
 ): Promise<ServerInstance> {
     const serverConfig: PluginsServerConfig = {
         ...defaultConfig,
@@ -46,6 +48,7 @@ export async function startPluginsServer(
     let piscinaStatsJob: schedule.Job | undefined
     let internalMetricsStatsJob: schedule.Job | undefined
     let piscina: Piscina | undefined
+    let installPiscinaPool: Piscina | undefined
     let queue: Queue | undefined
     let jobQueueConsumer: JobQueueConsumerControl | undefined
     let closeHub: () => Promise<void> | undefined
@@ -91,6 +94,9 @@ export async function startPluginsServer(
         if (piscina) {
             await stopPiscina(piscina)
         }
+        if (installPiscinaPool) {
+            await installPiscinaPool.destroy()
+        }
         await closeHub?.()
         status.info('👋', 'Over and out!')
         // wait an extra second for any misc async task to finish
@@ -130,7 +136,10 @@ export async function startPluginsServer(
         scheduleControl = await startSchedule(hub, piscina)
         jobQueueConsumer = await startJobQueueConsumer(hub, piscina)
 
-        queue = await startQueue(hub, piscina)
+        installPiscinaPool = makeInstallPiscina(serverConfig)
+
+        queue = await startQueue(hub, piscina, installPiscinaPool)
+        // TODO(nk): Separate queue for install tasks?
         piscina.on('drain', () => {
             void queue?.resume()
             void jobQueueConsumer?.resume()
@@ -216,6 +225,7 @@ export async function startPluginsServer(
         }
 
         serverInstance.piscina = piscina
+        serverInstance.installPiscinaPool = installPiscinaPool
         serverInstance.queue = queue
         serverInstance.stop = closeJobs
 

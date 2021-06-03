@@ -72,6 +72,10 @@ export class LazyPluginVM {
         return (await this.resolveInternalVm)?.methods.processEvent || null
     }
 
+    async getSetupPlugin(): Promise<PluginConfigVMResponse['methods']['setupPlugin'] | null> {
+        return (await this.resolveInternalVm)?.methods.setupPlugin || null
+    }
+
     async getTeardownPlugin(): Promise<PluginConfigVMResponse['methods']['teardownPlugin'] | null> {
         return (await this.resolveInternalVm)?.methods.teardownPlugin || null
     }
@@ -89,6 +93,7 @@ export class LazyPluginVM {
         pluginConfig: PluginConfig,
         vm: PluginConfigVMResponse
     ): Promise<void> {
+        console.log('Inferring capabilities!!')
         if (!pluginConfig.plugin) {
             throw new Error(`'PluginConfig missing plugin: ${pluginConfig}`)
         }

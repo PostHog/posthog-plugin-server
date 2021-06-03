@@ -17,7 +17,7 @@
         "benchmark:vm:worker": "node --expose-gc node_modules/.bin/jest --runInBand benchmarks/vm/worker.benchmark.ts",
         "start": "yarn start:dev",
         "start:dist": "node dist/index.js --base-dir ../posthog",
-        "start:dev": "ts-node-dev --exit-child src/index.ts --base-dir ../posthog",
+        "start:dev": "ts-node-dev --exit-child --debug src/index.ts --base-dir ../posthog",
         "start:dev:ee": "KAFKA_ENABLED=true KAFKA_HOSTS=localhost:9092 yarn start:dev",
         "build": "yarn clean && yarn compile",
         "clean": "rimraf dist/*",

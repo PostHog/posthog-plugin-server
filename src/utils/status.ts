@@ -16,6 +16,7 @@ export class Status implements StatusBlueprint {
     }
 
     determinePrefix(): string {
+        console.info('Writing status for thread: ', threadId)
         return `[${this.prefixOverride ?? (threadId ? threadId.toString().padStart(4, '_') : 'MAIN')}] ${
             new Date().toTimeString().split(' ')[0]
         }`
