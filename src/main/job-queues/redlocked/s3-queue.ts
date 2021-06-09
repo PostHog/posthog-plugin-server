@@ -36,7 +36,7 @@ export class S3Queue extends JobQueueBase {
         const dayTime = `${day.split('-').join('')}-${time.split(':').join('')}`
         const suffix = randomBytes(8).toString('hex')
 
-        await this.s3Wrapper.upload({
+        await this.s3Wrapper.putObject({
             Bucket: this.serverConfig.JOB_QUEUE_S3_BUCKET_NAME,
             Key: `${this.serverConfig.JOB_QUEUE_S3_PREFIX || ''}${day}/${dayTime}-${suffix}.json.gz`,
             Body: gzipSync(Buffer.from(JSON.stringify(retry), 'utf8')),
@@ -146,10 +146,10 @@ export class S3Queue extends JobQueueBase {
             Prefix: this.serverConfig.JOB_QUEUE_S3_PREFIX,
             MaxKeys: 2,
         })
-        await s3Wrapper.upload({
+        await s3Wrapper.putObject({
             Bucket: this.serverConfig.JOB_QUEUE_S3_BUCKET_NAME,
             Key: filename,
-            Body: 'test',
+            Body: Buffer.from('test'),
         })
         const object = await s3Wrapper.getObject({
             Bucket: this.serverConfig.JOB_QUEUE_S3_BUCKET_NAME,
