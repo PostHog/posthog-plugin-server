@@ -18,6 +18,15 @@ import { ActionMatcher } from './worker/ingestion/action-matcher'
 import { EventsProcessor } from './worker/ingestion/process-event'
 import { LazyPluginVM } from './worker/vm/lazy'
 
+export enum PostgresSSLMode {
+    Disable = 'disable',
+    Allow = 'allow',
+    Prefer = 'prefer',
+    Require = 'require',
+    VerifyCA = 'verify-ca',
+    VerifyFull = 'verify-full',
+}
+
 export enum LogLevel {
     None = 'none',
     Debug = 'debug',
@@ -47,6 +56,11 @@ export interface PluginsServerConfig extends Record<string, any> {
     POSTHOG_DB_PASSWORD: string
     POSTHOG_POSTGRES_HOST: string
     POSTHOG_POSTGRES_PORT: number
+    POSTHOG_POSTGRES_SSL_MODE: PostgresSSLMode
+    POSTHOG_POSTGRES_REJECT_UNAUTHORIZED: boolean
+    POSTHOG_POSTGRES_CLI_SSL_CA: string | null
+    POSTHOG_POSTGRES_CLI_SSL_CRT: string | null
+    POSTHOG_POSTGRES_CLI_SSL_KEY: string | null
     CLICKHOUSE_HOST: string
     CLICKHOUSE_DATABASE: string
     CLICKHOUSE_USER: string

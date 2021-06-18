@@ -3,6 +3,7 @@ import { PluginEvent } from '@posthog/plugin-scaffold'
 import * as Sentry from '@sentry/node'
 import AdmZip from 'adm-zip'
 import { randomBytes } from 'crypto'
+import { readFileSync } from 'fs'
 import Redis, { RedisOptions } from 'ioredis'
 import { DateTime } from 'luxon'
 import { Pool, PoolConfig } from 'pg'
@@ -10,7 +11,7 @@ import { Readable } from 'stream'
 import * as tar from 'tar-stream'
 import * as zlib from 'zlib'
 
-import { Element, LogLevel, Plugin, PluginConfigId, PluginsServerConfig, TimestampFormat } from '../types'
+import { LogLevel, Plugin, PluginConfigId, PluginsServerConfig, PostgresSSLMode, TimestampFormat } from '../types'
 import { status } from './status'
 
 /** Time until autoexit (due to error) gives up on graceful exit and kills the process right away. */
@@ -422,6 +423,13 @@ export function pluginDigest(plugin: Plugin, teamId?: number): string {
     return `plugin ${plugin.name} ID ${plugin.id} (${extras.join(' - ')})`
 }
 
+function getKeyValueFromFile(config: PluginsServerConfig, key: string | null): string {
+    if (!key || !config[key]) {
+        return ''
+    }
+    return readFileSync(config[key]).toString()
+}
+
 export function createPostgresPool(
     configOrDatabaseUrl: PluginsServerConfig | string,
     onError?: (error: Error) => any
@@ -441,11 +449,23 @@ export function createPostgresPool(
                   connectionString: configOrDatabaseUrl.DATABASE_URL,
               }
             : {
-                  database: configOrDatabaseUrl.POSTHOG_DB_NAME ?? undefined,
+                  database: configOrDatabaseUrl.POSTHOG_DB_NAME!,
                   user: configOrDatabaseUrl.POSTHOG_DB_USER,
                   password: configOrDatabaseUrl.POSTHOG_DB_PASSWORD,
                   host: configOrDatabaseUrl.POSTHOG_POSTGRES_HOST,
                   port: configOrDatabaseUrl.POSTHOG_POSTGRES_PORT,
+              }
+
+    const ssl =
+        typeof configOrDatabaseUrl === 'string'
+            ? undefined
+            : configOrDatabaseUrl.POSTHOG_POSTGRES_SSL_MODE === PostgresSSLMode.Disable
+            ? undefined
+            : {
+                  rejectUnauthorized: configOrDatabaseUrl.POSTHOG_POSTGRES_REJECT_UNAUTHORIZED,
+                  ca: getKeyValueFromFile(configOrDatabaseUrl, 'POSTHOG_POSTGRES_CLI_SSL_CA'),
+                  key: getKeyValueFromFile(configOrDatabaseUrl, 'POSTHOG_POSTGRES_CLI_SSL_KEY'),
+                  cert: getKeyValueFromFile(configOrDatabaseUrl, 'POSTHOG_POSTGRES_CLI_SSL_CRT'),
               }
 
     const pgPool = new Pool({
@@ -456,7 +476,7 @@ export function createPostgresPool(
             ? {
                   rejectUnauthorized: false,
               }
-            : undefined,
+            : ssl,
     })
 
     const handleError =
@@ -608,7 +628,7 @@ export function groupBy<T extends Record<string, any>, K extends keyof T>(
               return grouping
           }, {} as Record<T[K], T>)
         : objects.reduce((grouping, currentItem) => {
-              ;(grouping[currentItem[key]] = grouping[currentItem[key]] || []).push(currentItem)
+              (grouping[currentItem[key]] = grouping[currentItem[key]] || []).push(currentItem)
               return grouping
           }, {} as Record<T[K], T[]>)
 }
