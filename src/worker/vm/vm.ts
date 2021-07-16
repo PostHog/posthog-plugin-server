@@ -14,6 +14,7 @@ import { createStorage } from './extensions/storage'
 import { imports } from './imports'
 import { transformCode } from './transforms'
 import { upgradeExportEvents } from './upgrades/export-events'
+import { upgradeRedshiftImport } from './upgrades/imports/redshift'
 
 export class TimeoutError extends Error {
     name = 'TimeoutError'
@@ -167,6 +168,7 @@ export async function createPluginConfigVM(
                 onEvent: __asyncFunctionGuard(__bindMeta('onEvent'), 'onEvent'),
                 onSnapshot: __asyncFunctionGuard(__bindMeta('onSnapshot'), 'onSnapshot'),
                 processEvent: __asyncFunctionGuard(__bindMeta('processEvent'), 'processEvent'),
+                importEventsFromRedshift: __asyncFunctionGuard(__bindMeta('importEventsFromRedshift'), 'importEventsFromRedshift'),
             };
 
             const __tasks = {
@@ -214,13 +216,16 @@ export async function createPluginConfigVM(
 
     const vmResponse = vm.run(responseVar)
     const { methods, tasks, metrics } = vmResponse
-    const exportEventsExists = !!methods.exportEvents
 
-    if (exportEventsExists) {
+    if (!!methods.exportEvents) {
         upgradeExportEvents(hub, pluginConfig, vmResponse)
     }
 
-    setupMetrics(hub, pluginConfig, metrics, exportEventsExists)
+    if (!!methods.importEventsFromRedshift) {
+        upgradeRedshiftImport(hub, pluginConfig, vmResponse)
+    }
+
+    setupMetrics(hub, pluginConfig, metrics, methods)
 
     await vm.run(`${responseVar}.methods.setupPlugin?.()`)
 

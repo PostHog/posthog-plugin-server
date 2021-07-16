@@ -7,7 +7,7 @@ import { Kafka } from 'kafkajs'
 import { DateTime } from 'luxon'
 import { JobQueueManager } from 'main/job-queues/job-queue-manager'
 import { Job } from 'node-schedule'
-import { Pool } from 'pg'
+import { Pool, QueryResult, QueryResultRow } from 'pg'
 import { VM } from 'vm2'
 
 import { DB } from './utils/db/db'
@@ -328,6 +328,7 @@ export type VMMethods = {
     onSnapshot?: (event: PluginEvent) => Promise<void>
     exportEvents?: (events: PluginEvent[]) => Promise<void>
     processEvent?: (event: PluginEvent) => Promise<PluginEvent>
+    importEventsFromRedshift?: (rows: QueryResultRow[]) => Promise<PluginEvent[]>
 }
 
 export interface PluginConfigVMResponse {

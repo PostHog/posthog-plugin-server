@@ -1,6 +1,13 @@
 import equal from 'fast-deep-equal'
 
-import { Hub, MetricMathOperations, PluginConfig, PluginMetricsVmResponse, StoredPluginMetrics } from '../../../types'
+import {
+    Hub,
+    MetricMathOperations,
+    PluginConfig,
+    PluginMetricsVmResponse,
+    StoredPluginMetrics,
+    VMMethods,
+} from '../../../types'
 import { setPluginMetrics } from '../../../utils/db/sql'
 import { IllegalOperationError } from '../../../utils/utils'
 
@@ -72,7 +79,7 @@ export function setupMetrics(
     hub: Hub,
     pluginConfig: PluginConfig,
     metrics: PluginMetricsVmResponse,
-    exportEventsExists = false
+    methods: VMMethods
 ): void {
     if (!pluginConfig.plugin) {
         return
@@ -83,7 +90,7 @@ export function setupMetrics(
 
     if (!newMetrics) {
         // if exportEvents exists, we'll automatically assign metrics to it later
-        if (!exportEventsExists) {
+        if (!methods.exportEvents && !methods.importEventsFromRedshift) {
             // if there are old metrics set, we need to "erase" them
             // as this new version doesn't have any
             // if there are no metrics, no need for an update query
@@ -112,7 +119,7 @@ export function setupMetrics(
     }
 
     // add in the default exportEvents metrics
-    if (exportEventsExists) {
+    if (!!methods.exportEvents) {
         newMetrics = {
             ...newMetrics,
             events_seen: 'sum',
@@ -120,6 +127,13 @@ export function setupMetrics(
             undelivered_events: 'sum',
             retry_errors: 'sum',
             other_errors: 'sum',
+        }
+    }
+
+    if (!!methods.importEventsFromRedshift) {
+        newMetrics = {
+            ...newMetrics,
+            events_imported: 'sum',
         }
     }
 
